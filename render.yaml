@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: eulasum
+    runtime: python
+    buildCommand: ""
+    startCommand: python main.py
+    plan: free
