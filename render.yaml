@@ -2,6 +2,6 @@ services:
   - type: web
     name: eulasum
     runtime: python
-    buildCommand: ""
+    buildCommand: pip install -r requirements.txt
     startCommand: python main.py
     plan: free
