@@ -1,20 +1,20 @@
-from flask import Flask, request, render_template_string
+import flask
 from AI_model import Model
-from bs4 import BeautifulSoup
+import bs4
 import requests
 
 class Gui:
     def __init__(self):
         self.model = Model()
-        self.app = Flask(__name__)
+        self.app = flask.Flask(__name__)
         self._setup_routes()
 
     def _setup_routes(self):
         @self.app.route("/", methods=["GET", "POST"])
         def home():
             summary = ""
-            if request.method == "POST":
-                raw_input = request.form.get("eula_input", "").strip()
+            if flask.request.method == "POST":
+                raw_input = flask.request.form.get("eula_input", "").strip()
                 try:
                     if self.is_url(raw_input):
                         eula_text = self.fetch_clean_text(raw_input)
@@ -99,7 +99,7 @@ class Gui:
         </body>
         </html>
         """
-        return render_template_string(html, summary_text=summary_text)
+        return flask.render_template_string(html, summary_text=summary_text)
 
     def is_url(self, text):
         return text.strip().lower().startswith("http")
@@ -107,5 +107,5 @@ class Gui:
     def fetch_clean_text(self, url):
         headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers)
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
         return soup.get_text(separator="\n")
