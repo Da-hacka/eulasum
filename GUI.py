@@ -2,6 +2,7 @@ import flask
 from AI_model import Model
 import bs4
 import requests
+import os
 
 class Gui:
     def __init__(self):
@@ -26,7 +27,8 @@ class Gui:
             return self.render_page(summary)
 
     def run(self):
-        self.app.run(debug=True)
+        port = int(os.environ.get("PORT", 10000))
+        self.app.run(host="0.0.0.0", port=port)
 
     def render_page(self, summary_text):
         html = """
