@@ -6,9 +6,15 @@ import os
 
 class Gui:
     def __init__(self):
-        self.model = Model()
+        self.model = None  # don’t load yet
         self.app = flask.Flask(__name__)
         self._setup_routes()
+
+    def get_model(self):
+        if self.model is None:
+            from AI_model import Model
+            self.model = Model()
+        return self.model
 
     def _setup_routes(self):
         @self.app.route("/", methods=["GET", "POST"])
@@ -21,7 +27,7 @@ class Gui:
                         eula_text = self.fetch_clean_text(raw_input)
                     else:
                         eula_text = raw_input
-                    summary = self.model.grab_sum(eula=eula_text)
+                    summary = self.get_model().grab_sum(eula=eula_text)
                 except Exception as e:
                     summary = f"Error during summarization:\n{e}"
             return self.render_page(summary)
