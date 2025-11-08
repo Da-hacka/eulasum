@@ -48,18 +48,32 @@ class Model:
 
         def expand_clause(clause):
             clause = clause.lower()
-            if "password" in clause or "share" in clause:
-                return "Accounts must not be shared outside your household. Disney may monitor and enforce this."
-            if "commercial" in clause:
-                return "Use of the Services for commercial purposes is strictly prohibited."
-            if "vpn" in clause or "circumvent" in clause:
-                return "Using VPNs or tools to bypass geographic or subscription restrictions is not allowed."
-            if "automated" in clause or "bot" in clause:
-                return "Automated access via bots or scrapers is forbidden."
-            if "reverse engineer" in clause:
-                return "Tampering with or reverse engineering the platform or its DRM is prohibited."
-            if "geo" in clause or "location" in clause:
-                return "Access may be restricted based on geographic location or IP address."
+
+            expansions = [
+                (r"(password|share|account)",
+                 "Accounts must not be shared or reused across individuals unless explicitly permitted."),
+                (r"(commercial|resale|profit)",
+                 "Use of the service for commercial gain or resale is prohibited unless licensed."),
+                (r"(vpn|circumvent|bypass|proxy)",
+                 "Circumventing geographic, subscription, or access restrictions via VPNs or proxies is not allowed."),
+                (r"(automated|bot|scraper|crawler)",
+                 "Automated access through bots, scrapers, or crawlers is forbidden."),
+                (r"(reverse engineer|tamper|decompile|disassemble)",
+                 "Reverse engineering, tampering, or modifying the platform or its components is prohibited."),
+                (r"(geo|location|ip address)",
+                 "Access may be restricted or monitored based on geographic location or IP address."),
+                (r"(unauthorized|illegal|infringe)",
+                 "Unauthorized, illegal, or infringing use of the service is strictly prohibited."),
+                (r"(data|tracking|analytics)",
+                 "User data may be collected for analytics, personalization, or operational purposes."),
+                (r"(third[- ]?party|affiliate|partner)",
+                 "Data may be shared with third parties, affiliates, or partners for service delivery or compliance."),
+            ]
+
+            for pattern, explanation in expansions:
+                if re.search(pattern, clause):
+                    return explanation
+
             return clause.strip().capitalize()
 
         def format_section(title, items):
