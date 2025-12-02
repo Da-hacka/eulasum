@@ -4,15 +4,15 @@ import bs4
 import requests
 import os
 
+
 class Gui:
     def __init__(self):
-        self.model = None  # don’t load yet
+        self.model = None
         self.app = flask.Flask(__name__)
         self._setup_routes()
 
     def get_model(self):
         if self.model is None:
-            from AI_model import Model
             self.model = Model()
         return self.model
 
@@ -20,6 +20,8 @@ class Gui:
         @self.app.route("/", methods=["GET", "POST"])
         def home():
             summary = ""
+            risk = None
+
             if flask.request.method == "POST":
                 raw_input = flask.request.form.get("eula_input", "").strip()
                 try:
@@ -27,87 +29,83 @@ class Gui:
                         eula_text = self.fetch_clean_text(raw_input)
                     else:
                         eula_text = raw_input
-                    summary = self.get_model().grab_sum(eula=eula_text)
+
+                    summary, risk = self.get_model().grab_sum(eula_text)
+
                 except Exception as e:
                     summary = f"Error during summarization:\n{e}"
-            return self.render_page(summary)
+                    risk = None
+
+            return self.render_page(summary, risk)
 
     def run(self):
         port = int(os.environ.get("PORT", 10000))
         self.app.run(host="0.0.0.0", port=port)
 
-    def render_page(self, summary_text):
+    # ---------------------------------------------------------
+    # ✅ HTML PAGE WITH SAFETY INDICATOR
+    # ---------------------------------------------------------
+    def render_page(self, summary_text, risk_score):
         html = """
         <!DOCTYPE html>
         <html>
         <head>
         <style>
         .smooth-button {
-          background-color: #393E46; 
-          color: white; 
+          background-color: #393E46;
+          color: white;
           border: none;
           padding: 10px 20px;
-          font-size: 16px; 
+          font-size: 16px;
           border-radius: 5px;
           cursor: pointer;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-          transition: all 0.3s ease; 
+          transition: all 0.3s ease;
         }
-
         .smooth-button:hover {
-          background-color: #45a049; 
-          box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3); 
+          background-color: #45a049;
           transform: scale(1.05);
         }
-
-        .smooth-button:active {
-          transform: scale(0.95); 
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
-        }
-
-        .spinner {
-          border: 6px solid #f3f3f3;
-          border-top: 6px solid #00ADB5;
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          animation: spin 1s linear infinite;
-          margin: 10px auto;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+        .indicator {
+          width: 150px;
+          height: 30px;
+          border-radius: 5px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          margin-top: 10px;
         }
         </style>
-        <script>
-        document.addEventListener("DOMContentLoaded", function() {
-          const form = document.querySelector("form");
-          form.addEventListener("submit", () => {
-            document.getElementById("loading").style.display = "block";
-          });
-        });
-        </script>
-        <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&display=swap" rel="stylesheet">
-        <title>EULA Summarizer</title>
         </head>
+
         <body style="background-color:#222831; color:#DFD0B8; font-family: 'Comfortaa', sans-serif;">
             <h1>EULASum: Summarize with Ease</h1>
+
             <form method="post">
                 <label>Enter EULA text or URL:</label><br>
-                <textarea name="eula_input" rows="10" cols="80" style="background-color:#393E46; color:#DFD0B8;"></textarea><br><br>
+                <textarea name="eula_input" rows="10" cols="80"
+                    style="background-color:#393E46; color:#DFD0B8;"></textarea><br><br>
                 <button class="smooth-button" type="submit">Generate Summary</button>
             </form>
-            <div id="loading" style="display:none;">
-                <p>Summarizing... please wait</p>
-                <div class="spinner"></div>
-            </div>
+
+            {% if risk_score is not none %}
+                <h2>Safety Indicator:</h2>
+                <div class="indicator"
+                     style="background-color: {{ 'green' if risk_score < 40 else 'red' }};">
+                    {{ 'SAFE' if risk_score < 40 else 'RISKY' }}
+                </div>
+            {% endif %}
+
             <h2>Summary Output:</h2>
-            <textarea readonly rows="15" cols="80" style="background-color:#393E46; color:#DFD0B8;">{{ summary_text }}</textarea>
+            <textarea readonly rows="15" cols="80"
+                style="background-color:#393E46; color:#DFD0B8;">{{ summary_text }}</textarea>
         </body>
         </html>
         """
-        return flask.render_template_string(html, summary_text=summary_text)
+
+        return flask.render_template_string(html, summary_text=summary_text, risk_score=risk_score)
 
     def is_url(self, text):
         return text.strip().lower().startswith("http")
