@@ -1,30 +1,30 @@
-import time
 import os
 import re
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
-
+import time
+import random
 
 class Model:
     def __init__(self):
         os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
-
         model_name = "sshleifer/distilbart-cnn-12-6"
 
-        print("Loading summarizer model...")
+        # Load model normally (no callbacks)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(
             "cuda" if torch.cuda.is_available() else "cpu"
         )
+
     def grab_sum(self, eula):
+        # Simulate work so UI can show progress
+        time.sleep(1)
+
         summary = self.chunk_and_summarize(eula)
         risk = self.assess_risk(eula)
         return summary, risk
 
     def assess_risk(self, text):
-        """
-        Returns a risk score from 0–100 based on concerning patterns.
-        """
         risk_patterns = {
             r"(collect|track|store).*?(data|information)": 15,
             r"(third[- ]?party|affiliate|partner).*?(share|disclose)": 20,
@@ -37,12 +37,11 @@ class Model:
 
         score = 0
         lowered = text.lower()
-
         for pattern, weight in risk_patterns.items():
             if re.search(pattern, lowered, re.IGNORECASE):
                 score += weight
-
         return min(score, 100)
+
     def _format_summary(self, text):
         sentences = re.findall(r'[^.!?]+[.!?]', text)
         filtered = []
@@ -54,6 +53,7 @@ class Model:
                 continue
             filtered.append(f"• {s}")
         return "\n".join(filtered)
+
     def chunk_and_summarize(self, full_text):
         anchors = {
             "Consent & Agreement": r"(agree|consent|click|registration|terms of use)",
@@ -79,6 +79,7 @@ class Model:
                 continue
 
             chunk_text = "\n".join(lines)
+
             inputs = self.tokenizer(
                 chunk_text[:3000],
                 return_tensors="pt",

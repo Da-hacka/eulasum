@@ -42,9 +42,6 @@ class Gui:
         port = int(os.environ.get("PORT", 10000))
         self.app.run(host="0.0.0.0", port=port)
 
-    # ---------------------------------------------------------
-    # ✅ HTML PAGE WITH SAFETY INDICATOR
-    # ---------------------------------------------------------
     def render_page(self, summary_text, risk_score):
         html = """
         <!DOCTYPE html>
@@ -77,11 +74,46 @@ class Gui:
           font-weight: bold;
           margin-top: 10px;
         }
+        #loading {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0,0,0,0.7);
+          z-index: 9999;
+          text-align: center;
+        }
+        #loading img {
+          margin-top: 15%;
+          width: 300px;
+        }
+        .header {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+        .header img {
+          width: 100px;
+        }
         </style>
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          const form = document.querySelector("form");
+          form.addEventListener("submit", () => {
+            document.getElementById("loading").style.display = "block";
+          });
+        });
+        </script>
         </head>
 
         <body style="background-color:#222831; color:#DFD0B8; font-family: 'Comfortaa', sans-serif;">
-            <h1>EULASum: Summarize with Ease</h1>
+            <div class="header">
+                <img src="{{ url_for('static', filename='EULASum logo.png') }}" alt="EULASum Logo">
+                <h1>EULASum: Summarize with Ease</h1>
+            </div>
 
             <form method="post">
                 <label>Enter EULA text or URL:</label><br>
@@ -89,6 +121,11 @@ class Gui:
                     style="background-color:#393E46; color:#DFD0B8;"></textarea><br><br>
                 <button class="smooth-button" type="submit">Generate Summary</button>
             </form>
+
+            <div id="loading">
+                <p style="color:white; font-size:20px;">Summarizing... please wait, this may take over 90 seconds<br>Disclaimer: Do NOT put your full trust in this AI, it makes mistakes</p>
+                <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading animation">
+            </div>
 
             {% if risk_score is not none %}
                 <h2>Safety Indicator:</h2>
@@ -104,7 +141,6 @@ class Gui:
         </body>
         </html>
         """
-
         return flask.render_template_string(html, summary_text=summary_text, risk_score=risk_score)
 
     def is_url(self, text):
