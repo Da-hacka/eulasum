@@ -146,6 +146,9 @@ class Gui:
     def is_url(self, text):
         return text.strip().lower().startswith("http")
 
+    def is_safe_url(self, text):
+        return text.strip().lower().startswith("https")
+
     def fetch_clean_text(self, url):
         headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers)
